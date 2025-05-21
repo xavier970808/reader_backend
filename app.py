@@ -79,6 +79,22 @@ def read_epub_chapter():
         print(f"[ERROR] 讀取章節失敗：{e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
+    # 檢查是否有檔案欄位
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    # 只允許 epub
+    if not file.filename.lower().endswith('.epub'):
+        return jsonify({"error": "Only .epub allowed"}), 400
+
+    save_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(save_path)
+    return jsonify({"message": "Upload successful", "filename": file.filename})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
