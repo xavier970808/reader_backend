@@ -16,33 +16,33 @@ def list_epubs():
     files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith('.epub')]
     return jsonify(files)
 
-@app.route('/api/read-epub', methods=['POST'])
-def read_epub():
+@app.route('/api/read-book', methods=['POST'])
+def read_book():
     data = request.get_json()
-    filename = data.get('filename')
+    bookname = data.get('bookname')
 
-    if not filename:
-        return jsonify({"error": "Missing filename"}), 400
+    if not bookname:
+        return jsonify({"error": "Missing bookname"}), 400
 
-    path = os.path.join(UPLOAD_FOLDER, filename)
+    book_dir = os.path.join(UPLOAD_FOLDER, bookname)
+    if not os.path.exists(book_dir):
+        return jsonify({"error": "Book folder not found"}), 404
 
-    if not os.path.exists(path):
-        print(f"[ERROR] 檔案找不到：{path}")
-        return jsonify({"error": f"File not found: {filename}"}), 404
+    epub_path = os.path.join(book_dir, 'main.epub')
+    if not os.path.exists(epub_path):
+        return jsonify({"error": "EPUB file not found in book folder"}), 404
 
     try:
-        book = epub.read_epub(path)
+        book = epub.read_epub(epub_path)
         chapters = []
-
         for item in book.get_items():
             if item.get_type() == ITEM_DOCUMENT:
                 soup = BeautifulSoup(item.get_content(), 'html.parser')
                 chapters.append(soup.get_text())
-
         return jsonify(chapters)
     except Exception as e:
-        print(f"[ERROR] 無法讀取 EPUB：{e}")
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/read-epub-chapter', methods=['POST'])
 def read_epub_chapter():
@@ -95,6 +95,11 @@ def upload_file():
     file.save(save_path)
     return jsonify({"message": "Upload successful", "filename": file.filename})
 
+@app.route('/api/list-books')
+def list_books():
+    books = [name for name in os.listdir(UPLOAD_FOLDER)
+             if os.path.isdir(os.path.join(UPLOAD_FOLDER, name))]
+    return jsonify(books)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
