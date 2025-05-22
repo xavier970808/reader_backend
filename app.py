@@ -16,16 +16,16 @@ def list_epubs():
     files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith('.epub')]
     return jsonify(files)
 
-@app.route('/api/read-book', methods=['POST'])
-def read_book():
+@app.route('/api/read-epub', methods=['POST'])
+def read_epub():
     data = request.get_json()
-    bookname = data.get('bookname')
-    if not bookname:
-        return jsonify({"error": "Missing bookname"}), 400
+    filename = data.get('filename')
+    if not filename:
+        return jsonify({"error": "Missing filename"}), 400
 
-    path = os.path.join(UPLOAD_FOLDER, bookname)
+    path = os.path.join(UPLOAD_FOLDER, filename)
     if not os.path.exists(path):
-        return jsonify({"error": f"File not found: {bookname}"}), 404
+        return jsonify({"error": f"File not found: {filename}"}), 404
 
     try:
         book = epub.read_epub(path)
