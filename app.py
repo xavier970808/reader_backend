@@ -16,8 +16,17 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route('/api/list-epubs')
 def list_epubs():
-    files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith('.epub')]
-    return jsonify(files)
+    epub_paths = []
+    for root, _, filenames in os.walk(UPLOAD_FOLDER):
+        for fname in filenames:
+            if fname.lower().endswith('.epub'):
+                # 生成相对于 UPLOAD_FOLDER 的路径
+                full_path = os.path.join(root, fname)
+                rel_path = os.path.relpath(full_path, UPLOAD_FOLDER)
+                # 使用 POSIX 风格分隔符，前端 encodeURIComponent('%2F') 后可正确解码
+                epub_paths.append(rel_path.replace(os.sep, '/'))
+    return jsonify(epub_paths)
+
 
 @app.route('/api/read-epub', methods=['POST'])
 def read_epub():
