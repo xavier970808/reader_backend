@@ -6,7 +6,10 @@ from ebooklib import epub, ITEM_DOCUMENT
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
-CORS(app, origins=["https://reader-frontend-e3f.pages.dev"])
+CORS(app, origins=[
+  "https://reader-frontend-e3f.pages.dev",
+  "http://localhost:5173"
+])
 
 UPLOAD_FOLDER = './uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
