@@ -70,7 +70,12 @@ def read_epub_chapter():
         for item in book.get_items():
             if item.get_type() == ITEM_DOCUMENT:
                 soup = BeautifulSoup(item.get_content(), 'html.parser')
-                chapter_texts.append(soup.get_text())
+                for img in soup.find_all('img'):
+                    src = img.get('src')
+                    if src:
+                        asset_path = os.path.join(os.path.dirname(filename), src).replace('\\', '/')
+                        img['src'] = f"/api/book-assets/{asset_path}"
+                chapter_texts.append(str(soup))  # 保留 HTML 結構
 
         if chapter_index < 0 or chapter_index >= len(chapter_texts):
             return jsonify({"error": "Invalid chapter index"}), 400
