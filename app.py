@@ -107,5 +107,15 @@ def list_books():
              if os.path.isdir(os.path.join(UPLOAD_FOLDER, name))]
     return jsonify(books)
 
+from flask import send_from_directory
+
+@app.route('/api/book-assets/<path:filename>')
+def serve_epub_assets(filename):
+    full_path = os.path.join(UPLOAD_FOLDER, filename)
+    directory = os.path.dirname(full_path)
+    file = os.path.basename(full_path)
+    return send_from_directory(directory, file)
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
