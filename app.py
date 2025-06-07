@@ -2,8 +2,11 @@
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import os
-from ebooklib import epub, ITEM_DOCUMENT
+from ebooklib import epub, ITEM_DOCUMENT, ITEM_IMAGE
 from bs4 import BeautifulSoup
+import html
+import base64
+
 
 app = Flask(__name__)
 CORS(app, origins=[
@@ -41,13 +44,38 @@ def read_epub():
 
     try:
         book = epub.read_epub(path)
+        images = {}
+        for image in book.get_items_of_type(ITEM_IMAGE):
+            image_content = image.get_content()
+            image_name = image.get_name()
+            image_base64 = base64.b64encode(image_content).decode('utf-8')
+            _, file_extension = os.path.splitext(image_name)
+            if file_extension:
+                file_extension = file_extension[1:]  # 去掉前面的點
+            else:
+                file_extension = 'png'
+            data_uri = f'data:image/{file_extension};base64,{image_base64}'
+            images[image_name] = data_uri
         chapters = []
         for item in book.get_items():
             if item.get_type() == ITEM_DOCUMENT:
                 soup = BeautifulSoup(item.get_content(), 'html.parser')
-                chapters.append(soup.get_text())
+                img_tags = soup.find_all('img')
+                for img in img_tags:
+                    src = img.get('src')
+                    while src.startswith('../'):
+                        src = src[3:]
+                    if src in images:
+                        img['src'] = images[src]
+                    img['width'] = "100%"
+                    img['height'] = "auto"
+                content = soup.body.decode_contents()
+                
+                chapters.append(content)
+        #print("chapters :",chapters)
         return jsonify(chapters)
     except Exception as e:
+        print(f"[ERROR] 讀取 epub 檔案失敗：{e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/read-epub-chapter', methods=['POST'])
